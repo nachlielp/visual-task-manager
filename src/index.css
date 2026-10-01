@@ -1,0 +1,343 @@
+@import "tailwindcss";
+
+/* Pink PostHog — Tailwind v4 theme + component layer for the React library.
+   Tokens in @theme generate utilities (bg-paper, text-ink, text-brand, …);
+   the @layer components block defines the .btn / .card / .input / .kicker
+   classes the components in components/ui apply. Add the Google Fonts links
+   (Archivo + Source Code Pro) to index.html — see SKILL.md. */
+@theme {
+  --font-sans:
+    "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-paper: #faedf0;
+  --color-paper-dark: #f2dbe1;
+  --color-ink: #151515;
+  --color-muted: #6f5b61;
+  --color-line: #e4c8cf;
+  --color-line-strong: #c9a0ab;
+
+  /* Accent — ask the user which set to use (see SKILL.md "Accent"):
+     Classic  brand #f54e00  brand-dark #b23800  tint #fde8de
+     Sky      brand #0369a1  brand-dark #075985  tint #e0f2fe
+     Teal     brand #0f766e  brand-dark #134e4a  tint #ccfbf1
+     Violet   brand #7c3aed  brand-dark #5b21b6  tint #ede9fe
+     Berry    brand #be185d  brand-dark #9d174d  tint #fce7f3 */
+  --color-brand: #0369a1;
+  --color-brand-dark: #075985;
+  --color-tint: #e0f2fe;
+
+  --color-success: #2f9110;
+  --color-success-dark: #1e6309;
+  --color-success-tint: #e7f4e0;
+  --color-danger: #b91c1c;
+  --color-danger-dark: #7f1d1d;
+  --color-danger-tint: #fee2e2;
+
+  --color-code-bg: #1d1f27;
+  --color-code-ink: #e8eaf0;
+
+  /* Radix enter animations — used by dialog/popover/select/dropdown/tooltip. */
+  --animate-overlay-in: overlay-in 0.15s ease;
+  --animate-content-in: content-in 0.15s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes content-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Reserve symmetric scrollbar gutters so the page never shifts sideways
+   when content grows past the viewport, and stays visually centered. */
+html {
+  scrollbar-gutter: stable both-edges;
+}
+
+body {
+  @apply bg-paper font-sans text-ink antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+@layer components {
+  /* ---- 3D button ------------------------------------------------------
+     Hard bottom edge that depresses on click. One fixed height (34px)
+     everywhere — resist adding size variants; use .btn-ghost instead. */
+  .btn {
+    --btn-edge: var(--color-line-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 2.125rem;
+    border: 1.5px solid var(--btn-edge);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--btn-edge);
+    padding: 0 0.9rem;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    color: var(--color-ink);
+    background: #fff;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    transition:
+      transform 0.05s ease,
+      box-shadow 0.05s ease,
+      filter 0.1s ease;
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: none;
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Colored buttons use the accent/semantic token with its darker edge. To
+     soften them a step (as some projects prefer) swap the background for a
+     +1 lighter shade of the same hue and keep the edge, e.g. Berry primary
+     background #db2777. */
+  .btn-primary {
+    --btn-edge: var(--color-brand-dark);
+    background: var(--color-brand);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+  .btn-secondary {
+    background: #fff;
+    color: var(--color-ink);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: #fff7f8;
+  }
+  .btn-danger {
+    --btn-edge: var(--color-danger-dark);
+    background: var(--color-danger);
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+  .btn-success {
+    --btn-edge: var(--color-success-dark);
+    background: var(--color-success);
+    color: #fff;
+  }
+  .btn-success:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  /* Borderless sibling — same height and type as .btn. */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 2.125rem;
+    border: none;
+    border-radius: 6px;
+    padding: 0 0.65rem;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    color: var(--color-muted);
+    background: transparent;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn-ghost:hover {
+    background: var(--color-paper-dark);
+    color: var(--color-ink);
+  }
+  .btn-ghost-danger {
+    color: var(--color-danger);
+  }
+  .btn-ghost-danger:hover {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+
+  /* ---- Surfaces ------------------------------------------------------ */
+  .card {
+    background: #fff;
+    border: 1.5px solid var(--color-line);
+    border-radius: 8px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.06); /* hard offset — never blur */
+  }
+
+  .input {
+    width: 100%;
+    height: 2.125rem; /* matches .btn so paired rows align */
+    border: 1.5px solid var(--color-line);
+    border-radius: 6px;
+    background: #fff;
+    padding: 0 0.75rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--color-ink);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.04);
+    outline: none;
+  }
+  .input:focus {
+    border-color: var(--color-brand); /* no glow rings */
+  }
+  .input::placeholder {
+    color: var(--color-muted);
+  }
+
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236f5b61' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+  }
+
+  /* Uppercase kicker — above headings, table headers, section titles.
+     (Not "overline": that collides with a Tailwind utility.) */
+  .kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Amber warning callout — reads correctly even on pink paper. */
+  .callout-warn {
+    background: #fbf3da;
+    border: 1.5px solid #e8c468;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #4a3a0a;
+    font-size: 14px;
+  }
+}
+
+/* Inline code + code blocks */
+code {
+  font-family: var(--font-mono);
+}
+:not(pre) > code {
+  font-size: 0.88em;
+  background: var(--color-paper-dark);
+  border: 1px solid var(--color-line);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+}
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-ink);
+  border-radius: 10px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  line-height: 1.55;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: inherit;
+}
+
+@layer components {
+  /* Brand/title in page chrome that navigates home. */
+  .header-home {
+    all: unset;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .header-home:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+  }
+}
+
+/* Rendered markdown (ticket descriptions, comments). */
+.md {
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.6em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  margin-top: 1em;
+  font-size: 1em;
+  font-weight: 800;
+}
+.md h1 {
+  font-size: 1.25em;
+}
+.md h2 {
+  font-size: 1.12em;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.3em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.3em;
+}
+.md li + li {
+  margin-top: 0.2em;
+}
+.md a {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+.md a:hover {
+  text-decoration: underline;
+}
+.md blockquote {
+  border-left: 3px solid var(--color-line-strong);
+  padding-left: 0.8em;
+  color: var(--color-muted);
+}
+.md table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.md th,
+.md td {
+  border: 1.5px solid var(--color-line);
+  padding: 4px 8px;
+  text-align: left;
+}
+.md pre {
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+.md input[type="checkbox"] {
+  accent-color: var(--color-brand);
+  margin-right: 0.35em;
+}
+.md li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.3em;
+}
