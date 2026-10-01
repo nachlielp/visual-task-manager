@@ -60,7 +60,7 @@ export default function App() {
               </NavItem>
               <NavItem to="/settings">
                 <IconSparkle className="text-base" />
-                <span className="hidden sm:inline">Connect Claude</span>
+                <span className="hidden sm:inline">Connect agent</span>
               </NavItem>
             </nav>
             <div className="ml-auto">

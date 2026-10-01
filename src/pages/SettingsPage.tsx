@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Button, Input, useConfirm, useToast } from "@/components/ui";
+import {
+  Button,
+  Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  useConfirm,
+  useToast,
+} from "@/components/ui";
 import { IconCopy, IconKey, IconTrash } from "@/components/Icons";
 import { errorText, timeAgo } from "@/lib/tickets";
 
@@ -11,15 +19,31 @@ const MCP_URL = `${(import.meta.env.VITE_CONVEX_URL as string).replace(
   ".convex.site",
 )}/mcp`;
 
-const CLAUDE_MD = `## Task tracking
+const INSTRUCTIONS = `## Task tracking
 Use the task-board MCP to track your work so I can follow it on my board:
 - At the start of a task, call ensure_project with this repo ("owner/name" from the git remote).
 - Create a ticket for each non-trivial task with a checklist of the steps; set it to in_progress when you start.
 - Tick off checklist items as you finish them, add_comment for notable decisions, and move the ticket to review/done when finished.
 - Use add_dependency when one ticket must wait for another.`;
 
-function addCommand(token: string) {
+type Client = "claude" | "codex";
+
+const CLIENTS: Record<
+  Client,
+  { label: string; keyName: string; instructionsFile: string }
+> = {
+  claude: { label: "Claude Code", keyName: "Claude Code", instructionsFile: "~/.claude/CLAUDE.md" },
+  codex: { label: "Codex (OpenAI)", keyName: "Codex", instructionsFile: "~/.codex/AGENTS.md" },
+};
+
+function claudeCommand(token: string) {
   return `claude mcp add --transport http --scope user task-board ${MCP_URL} --header "Authorization: Bearer ${token}"`;
+}
+
+function codexConfig(token: string) {
+  return `[mcp_servers.task-board]
+url = "${MCP_URL}"
+http_headers = { "Authorization" = "Bearer ${token}" }`;
 }
 
 function CopyBlock({ text, label }: { text: string; label?: string }) {
@@ -57,7 +81,8 @@ export default function SettingsPage() {
   const revoke = useMutation(api.apiKeys.revoke);
   const confirm = useConfirm();
   const { toast } = useToast();
-  const [name, setName] = useState("Claude Code");
+  const [client, setClient] = useState<Client>("claude");
+  const [name, setName] = useState(CLIENTS.claude.keyName);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -74,16 +99,34 @@ export default function SettingsPage() {
     }
   };
 
+  const pickClient = (next: Client) => {
+    // Keep a custom key name; only swap the default one.
+    if (name === CLIENTS[client].keyName) setName(CLIENTS[next].keyName);
+    setClient(next);
+  };
+
+  const key = token ?? "<your-api-key>";
+  const { label, instructionsFile } = CLIENTS[client];
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
       <div>
         <div className="kicker text-brand">MCP</div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Connect Claude</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Connect an agent</h1>
         <p className="mt-2 text-muted">
-          Claude manages tickets through an MCP server with full create / read / update / delete
-          access to your projects, tickets, checklists and dependencies. Changes show up on the
-          board live.
+          Coding agents manage tickets through an MCP server with full create / read / update /
+          delete access to your projects, tickets, checklists and dependencies. Changes show up on
+          the board live.
         </p>
+        <Tabs value={client} onValueChange={(v) => pickClient(v as Client)} className="mt-4">
+          <TabsList aria-label="Agent">
+            {(Object.keys(CLIENTS) as Client[]).map((c) => (
+              <TabsTrigger key={c} value={c}>
+                {CLIENTS[c].label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <section className="card flex flex-col gap-4 p-5">
@@ -124,7 +167,7 @@ export default function SettingsPage() {
                   onClick={async () => {
                     const ok = await confirm({
                       title: `Revoke “${k.name}”?`,
-                      description: "Claude sessions using this key will lose access.",
+                      description: "Agents using this key will lose access.",
                       confirmText: "Revoke",
                       variant: "danger",
                     });
@@ -140,11 +183,25 @@ export default function SettingsPage() {
       </section>
 
       <section className="card flex flex-col gap-3 p-5">
-        <h2 className="text-lg font-extrabold">2. Add the server to Claude Code</h2>
-        <p className="text-sm text-muted">
-          Run this once in a terminal. <code>--scope user</code> makes it available in every repo.
-        </p>
-        <CopyBlock text={addCommand(token ?? "<your-api-key>")} label="Copy command" />
+        <h2 className="text-lg font-extrabold">2. Add the server to {label}</h2>
+        {client === "claude" ? (
+          <>
+            <p className="text-sm text-muted">
+              Run this once in a terminal. <code>--scope user</code> makes it available in every
+              repo.
+            </p>
+            <CopyBlock text={claudeCommand(key)} label="Copy command" />
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              Add this to <code>~/.codex/config.toml</code>. The Codex CLI, IDE extension and app
+              share that file, so it's available in every repo. Check it with{" "}
+              <code>codex mcp list</code>.
+            </p>
+            <CopyBlock text={codexConfig(key)} label="Copy config" />
+          </>
+        )}
         <p className="text-sm text-muted">
           Any MCP client that speaks Streamable HTTP works: point it at{" "}
           <code className="break-all">{MCP_URL}</code> with an{" "}
@@ -153,12 +210,12 @@ export default function SettingsPage() {
       </section>
 
       <section className="card flex flex-col gap-3 p-5">
-        <h2 className="text-lg font-extrabold">3. Tell Claude to use it (optional)</h2>
+        <h2 className="text-lg font-extrabold">3. Tell {label} to use it (optional)</h2>
         <p className="text-sm text-muted">
-          The server already explains the workflow to Claude. To make it track work without
-          being asked, add this to <code>~/.claude/CLAUDE.md</code>:
+          The server already explains the workflow to the agent. To make it track work without
+          being asked, add this to <code>{instructionsFile}</code>:
         </p>
-        <CopyBlock text={CLAUDE_MD} label="Copy instructions" />
+        <CopyBlock text={INSTRUCTIONS} label="Copy instructions" />
       </section>
     </div>
   );

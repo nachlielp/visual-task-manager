@@ -93,13 +93,13 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <IconFolder className="mx-auto mb-3 text-3xl" />
       <p className="font-semibold text-ink">No projects yet</p>
       <p className="mx-auto mt-1 max-w-md text-sm">
-        Connect Claude and it will create a project for each repo it works in — or add one
-        yourself.
+        Connect Claude Code or Codex and it will create a project for each repo it works in — or
+        add one yourself.
       </p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         <Button asChild variant="primary">
           <Link to="/settings">
-            <IconSparkle /> Connect Claude
+            <IconSparkle /> Connect an agent
           </Link>
         </Button>
         <Button onClick={onCreate}>

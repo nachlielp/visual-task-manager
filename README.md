@@ -21,16 +21,26 @@ pnpm dev          # vite + convex dev in parallel
 
 `.env.local` holds `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY`. The Convex deployment env holds `CLERK_JWT_ISSUER_DOMAIN` and, optionally, `APP_URL` (the deployed site; when set, MCP responses include ticket links).
 
-## Connect Claude (MCP)
+## Connect an agent (MCP)
 
-1. Sign in, then open **Connect Claude** and create an API key. It's shown once.
-2. Register the server, once per machine:
+1. Sign in, then open **Connect agent** and create an API key. It's shown once.
+2. Register the server, once per machine.
+
+   Claude Code:
 
    ```bash
    claude mcp add --transport http --scope user task-board https://<deployment>.convex.site/mcp --header "Authorization: Bearer <api-key>"
    ```
 
-The Settings page shows this command with your URL and key already filled in.
+   Codex (OpenAI), in `~/.codex/config.toml`:
+
+   ```toml
+   [mcp_servers.task-board]
+   url = "https://<deployment>.convex.site/mcp"
+   http_headers = { "Authorization" = "Bearer <api-key>" }
+   ```
+
+The Settings page shows both with your URL and key already filled in.
 
 The server is stateless JSON-RPC over Streamable HTTP, served by a Convex HTTP action (`convex/http.ts`). Each tool call runs as a single Convex mutation, so a call either fully applies or fully rolls back. Only SHA-256 hashes of API keys are stored. To revoke a key, use the Settings page, or from the CLI:
 `npx convex run apiKeys:revokeByPrefix '{"prefix":"vtm_abc123"}'`.
