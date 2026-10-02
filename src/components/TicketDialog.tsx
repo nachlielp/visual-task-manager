@@ -33,12 +33,14 @@ import {
 import { Markdown } from "@/components/Markdown";
 import { ActorIcon } from "@/components/ActivityFeed";
 import {
+  FIX_LABELS,
   PRIORITIES,
   PRIORITY_STYLE,
   STATUSES,
   STATUS_DOT,
   STATUS_LABELS,
   errorText,
+  isFixLabel,
   timeAgo,
   type Priority,
   type Status,
@@ -197,6 +199,7 @@ function TicketBody({
               </SelectContent>
             </Select>
           </Field>
+          <FixType ticket={t} />
           <Labels ticket={t} />
           <Dependencies ticket={t} projectId={projectId} />
           <div className="flex flex-col gap-1 text-xs font-semibold text-muted">
@@ -540,16 +543,50 @@ function ChecklistRow({ item, ticketId }: { item: Item; ticketId: Id<"tickets"> 
   );
 }
 
+/** Code fix vs config fix: one of the built-in labels, or neither. */
+function FixType({ ticket: t }: { ticket: TicketDetail }) {
+  const update = useMutation(api.tickets.update);
+  const run = useAction();
+  const current = FIX_LABELS.find((f) => t.labels.includes(f.label))?.label;
+  const pick = (label: string) => {
+    const rest = t.labels.filter((l) => !isFixLabel(l));
+    run(update({ ticket_id: t._id, labels: label === current ? rest : [label, ...rest] }));
+  };
+  return (
+    <Field label="Fix">
+      <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Fix type">
+        {FIX_LABELS.map((f) => (
+          <button
+            key={f.label}
+            role="radio"
+            aria-checked={current === f.label}
+            onClick={() => pick(f.label)}
+            className={cn(
+              "flex flex-col items-start rounded-md border-[1.5px] px-2 py-1 text-left text-xs font-bold",
+              current === f.label ? f.style : "border-line bg-white text-muted hover:bg-paper-dark",
+            )}
+          >
+            {f.name}
+            <span className="text-[11px] font-semibold opacity-75">{f.hint}</span>
+          </button>
+        ))}
+      </div>
+    </Field>
+  );
+}
+
 function Labels({ ticket: t }: { ticket: TicketDetail }) {
   const update = useMutation(api.tickets.update);
   const run = useAction();
   const [text, setText] = useState("");
   const set = (labels: string[]) => run(update({ ticket_id: t._id, labels }));
+  // Fix labels are edited with FixType above.
+  const shown = t.labels.filter((l) => !isFixLabel(l));
   return (
     <Field label="Labels">
-      {t.labels.length > 0 && (
+      {shown.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {t.labels.map((l) => (
+          {shown.map((l) => (
             <span
               key={l}
               className="flex items-center gap-1 rounded-[5px] bg-paper-dark py-0.5 pr-1 pl-2 text-xs font-bold text-muted"

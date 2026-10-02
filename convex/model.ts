@@ -25,6 +25,17 @@ export const STATUS_LABELS: Record<Status, string> = {
 };
 export const PRIORITIES: Priority[] = ["low", "medium", "high", "urgent"];
 
+// Built-in labels saying who can resolve a ticket. At most one per ticket;
+// config-fix wins because it means the user has to get involved anyway.
+export const CODE_FIX = "code-fix";
+export const CONFIG_FIX = "config-fix";
+const FIX_ALIASES = new Map([
+  ["code fix", CODE_FIX],
+  ["codefix", CODE_FIX],
+  ["config fix", CONFIG_FIX],
+  ["configfix", CONFIG_FIX],
+]);
+
 export type ChecklistInput = {
   text: string;
   done?: boolean;
@@ -513,8 +524,16 @@ async function orderAtBottom(ctx: QueryCtx, projectId: Id<"projects">, status: S
   return last ? last.order + 1 : 0;
 }
 
-function cleanLabels(labels: string[]) {
-  return [...new Set(labels.map((l) => l.trim().toLowerCase()).filter(Boolean))];
+export function cleanLabels(labels: string[]) {
+  const out = [
+    ...new Set(
+      labels
+        .map((l) => l.trim().toLowerCase())
+        .map((l) => FIX_ALIASES.get(l) ?? l)
+        .filter(Boolean),
+    ),
+  ];
+  return out.includes(CONFIG_FIX) ? out.filter((l) => l !== CODE_FIX) : out;
 }
 
 export async function createTicket(

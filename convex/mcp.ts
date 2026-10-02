@@ -11,6 +11,7 @@ import {
   addDependency,
   checklistRows,
   checklistTree,
+  cleanLabels,
   createTicket,
   deleteChecklistItem,
   deleteProject,
@@ -40,6 +41,7 @@ Workflow:
 2. Before starting non-trivial work, check list_tickets for an existing ticket. Otherwise create_ticket with a clear title, a markdown description, and a checklist of the concrete steps (nest sub-steps with "children").
 3. Set status to in_progress when you start a ticket. Tick off checklist items with update_checklist_item as you finish them (get_ticket shows item ids). Use add_comment for notable findings or decisions. When finished, move the ticket to review if the user should check it, otherwise to done.
 4. Record ordering constraints with add_dependency (a ticket depends on another one that must finish first).
+5. Give every ticket exactly one fix label so the user can filter by who has to act: "code-fix" when you can do all of it yourself in code, or "config-fix" when it needs the user (dashboard or console settings, secrets/env vars/API keys, accounts or billing, DNS, approvals, manual testing on their devices). If you discover mid-ticket that the user is needed, switch it to config-fix and add_comment saying exactly what they must do.
 
 Ticket refs look like KEY-12. Statuses: backlog, todo, in_progress, review, done. Priorities: low, medium, high, urgent.`;
 
@@ -58,7 +60,8 @@ const priorityArg = { type: "string", enum: PRIORITIES };
 const labelsArg = {
   type: "array",
   items: { type: "string" },
-  description: "Free-form labels, e.g. bug, frontend.",
+  description:
+    'Free-form labels, e.g. bug, frontend. Include exactly one of "code-fix" (you can do it all) or "config-fix" (needs the user).',
 };
 
 /** Checklist item schema nested `depth` levels (no $ref, for broad client support). */
@@ -164,7 +167,10 @@ export const tools = [
           items: statusArg,
           description: "Only these statuses (default: all).",
         },
-        label: { type: "string", description: "Only tickets with this label." },
+        label: {
+          type: "string",
+          description: 'Only tickets with this label, e.g. "config-fix" for ones that need the user.',
+        },
       },
       ["project"],
     ),
@@ -475,7 +481,7 @@ export const callTool = internalMutation({
       case "list_tickets": {
         const p = await resolveProject(ctx, userId, str(args, "project"));
         const statuses = optStrArray(args, "status")?.map(toStatus);
-        const label = optStr(args, "label")?.trim().toLowerCase();
+        const label = cleanLabels([optStr(args, "label") ?? ""])[0];
         const refs = refBuilder(ctx);
         const tickets = [];
         for (const status of statuses ?? STATUSES) {
