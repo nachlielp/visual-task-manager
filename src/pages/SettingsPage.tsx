@@ -16,7 +16,8 @@ Use the task-board MCP to track your work so I can follow it on my board:
 - At the start of a task, call ensure_project with this repo ("owner/name" from the git remote).
 - Create a ticket for each non-trivial task with a checklist of the steps; set it to in_progress when you start.
 - Tick off checklist items as you finish them, add_comment for notable decisions, and move the ticket to review/done when finished.
-- Use add_dependency when one ticket must wait for another.`;
+- Use add_dependency when one ticket must wait for another.
+- Label every ticket "code-fix" if you can do it all yourself, or "config-fix" if it needs me (dashboards, secrets, env vars, accounts, approvals).`;
 
 function addCommand(token: string) {
   return `claude mcp add --transport http --scope user task-board ${MCP_URL} --header "Authorization: Bearer ${token}"`;

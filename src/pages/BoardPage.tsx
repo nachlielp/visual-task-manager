@@ -32,10 +32,12 @@ import { TicketDialog } from "@/components/TicketDialog";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { ProjectSettingsModal } from "@/components/ProjectSettingsModal";
 import {
+  FIX_LABELS,
   STATUSES,
   STATUS_DOT,
   STATUS_LABELS,
   errorText,
+  isFixLabel,
   type Status,
   type TicketSummary,
 } from "@/lib/tickets";
@@ -137,7 +139,17 @@ export default function BoardPage() {
   );
 
   const allLabels = useMemo(
-    () => [...new Set((tickets ?? []).flatMap((t) => t.labels))].sort(),
+    () => [...new Set((tickets ?? []).flatMap((t) => t.labels))].filter((l) => !isFixLabel(l)).sort(),
+    [tickets],
+  );
+  const fixCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        FIX_LABELS.map((f) => [
+          f.label,
+          (tickets ?? []).filter((t) => t.status !== "done" && t.labels.includes(f.label)).length,
+        ]),
+      ),
     [tickets],
   );
 
@@ -239,30 +251,47 @@ export default function BoardPage() {
             </Button>
           </div>
         </div>
-        {allLabels.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="kicker mr-1 text-muted">Labels</span>
-            {allLabels.map((l) => (
-              <button
-                key={l}
-                onClick={() => setLabel(label === l ? null : l)}
-                className={cn(
-                  "rounded-md border-[1.5px] px-2 py-0.5 text-xs font-bold",
-                  label === l
-                    ? "border-brand/30 bg-tint text-brand"
-                    : "border-line bg-white text-muted hover:bg-paper-dark",
-                )}
-              >
-                {l}
-              </button>
-            ))}
-            {label && (
-              <button className="btn-ghost h-7 px-2" onClick={() => setLabel(null)}>
-                <IconX /> Clear
-              </button>
-            )}
-          </div>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="kicker mr-1 text-muted">Fix</span>
+          {FIX_LABELS.map((f) => (
+            <button
+              key={f.label}
+              onClick={() => setLabel(label === f.label ? null : f.label)}
+              title={`${f.hint} · ${fixCounts[f.label]} open`}
+              aria-pressed={label === f.label}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border-[1.5px] px-2 py-0.5 text-xs font-bold",
+                label === f.label ? f.style : "border-line bg-white text-muted hover:bg-paper-dark",
+              )}
+            >
+              {f.name}
+              <span className="hidden font-semibold opacity-70 sm:inline">· {f.hint}</span>
+              <span className="rounded-sm bg-black/5 px-1 tabular-nums">{fixCounts[f.label]}</span>
+            </button>
+          ))}
+          {allLabels.length > 0 && (
+            <span className="kicker mr-1 ml-3 text-muted">Labels</span>
+          )}
+          {allLabels.map((l) => (
+            <button
+              key={l}
+              onClick={() => setLabel(label === l ? null : l)}
+              className={cn(
+                "rounded-md border-[1.5px] px-2 py-0.5 text-xs font-bold",
+                label === l
+                  ? "border-brand/30 bg-tint text-brand"
+                  : "border-line bg-white text-muted hover:bg-paper-dark",
+              )}
+            >
+              {l}
+            </button>
+          ))}
+          {label && (
+            <button className="btn-ghost h-7 px-2" onClick={() => setLabel(null)}>
+              <IconX /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mx-auto flex w-full max-w-[1600px] gap-4 px-4 pt-4 pb-2">

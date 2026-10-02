@@ -1,5 +1,11 @@
 import { IconChecklist, IconLink, IconLock, IconSparkle } from "@/components/Icons";
-import { PRIORITY_STYLE, timeAgo, type TicketSummary } from "@/lib/tickets";
+import {
+  PRIORITY_STYLE,
+  isFixLabel,
+  labelStyle,
+  timeAgo,
+  type TicketSummary,
+} from "@/lib/tickets";
 import { cn } from "@/lib/utils";
 
 export function TicketCard({
@@ -48,10 +54,13 @@ export function TicketCard({
       </div>
       {t.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {t.labels.map((l) => (
+          {[...t.labels.filter(isFixLabel), ...t.labels.filter((l) => !isFixLabel(l))].map((l) => (
             <span
               key={l}
-              className="rounded-[4px] bg-paper-dark px-1.5 py-px text-[11px] font-bold text-muted"
+              className={cn(
+                "rounded-[4px] border px-1.5 py-px text-[11px] font-bold",
+                labelStyle(l),
+              )}
             >
               {l}
             </span>

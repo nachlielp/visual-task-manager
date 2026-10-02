@@ -36,6 +36,29 @@ export const PRIORITY_STYLE: Record<Priority, string> = {
   urgent: "border-danger/30 bg-danger-tint text-danger",
 };
 
+/** Built-in labels saying who can resolve a ticket (mirrors convex/model.ts). */
+export const FIX_LABELS = [
+  {
+    label: "code-fix",
+    name: "Code fix",
+    hint: "Claude can do it all",
+    style: "border-success/30 bg-success-tint text-success-dark",
+  },
+  {
+    label: "config-fix",
+    name: "Config fix",
+    hint: "Needs you",
+    style: "border-[#f0a868] bg-[#fdebdc] text-[#7a3a08]",
+  },
+] as const;
+
+export const isFixLabel = (l: string) => FIX_LABELS.some((f) => f.label === l);
+
+/** Chip colors for a label: fix labels get their own, the rest are neutral. */
+export function labelStyle(l: string): string {
+  return FIX_LABELS.find((f) => f.label === l)?.style ?? "border-transparent bg-paper-dark text-muted";
+}
+
 export function timeAgo(ms: number, now = Date.now()): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
   if (s < 45) return "just now";
